@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Sites{% endblock %}
+{% block page_title %}Sites{% endblock %}
+
+{% block topbar_actions %}
+<a href="{% url 'site_create' %}" class="btn btn-primary btn-sm">
+  <i class="bi bi-plus-lg me-1"></i> Add Site
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="card-panel">
+  <div class="table-responsive">
+    <table class="table table-sm ftpops-table">
+      <thead>
+        <tr>
+          <th>Site Name</th>
+          <th>Client</th>
+          <th>Address</th>
+          <th>Jobs</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for site in sites %}
+        <tr>
+          <td><strong>{{ site.site_name }}</strong></td>
+          <td>{{ site.client.name }}</td>
+          <td>{{ site.address|default:"—" }}</td>
+          <td><span class="badge bg-primary">{{ site.job_count }}</span></td>
+          <td class="text-end">
+            <a href="{% url 'site_edit' site.pk %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>
+            <a href="{% url 'site_delete' site.pk %}" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-center text-muted py-4">No sites yet. Click "Add Site" to get started.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

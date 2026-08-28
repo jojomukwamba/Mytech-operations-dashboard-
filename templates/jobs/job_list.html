@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}All Jobs{% endblock %}
+{% block page_title %}Job List{% endblock %}
+
+{% block topbar_actions %}
+<a href="{% url 'job_create' %}" class="btn btn-primary btn-sm">
+  <i class="bi bi-plus-lg me-1"></i> New Job
+</a>
+{% endblock %}
+
+{% block content %}
+<!-- ── Filters ──────────────────────────────────────────────────────────── -->
+<form method="get" class="card-panel mb-4">
+  <div class="row g-2 align-items-end">
+    <div class="col-12 col-md-3">
+      <label class="form-label small">Search</label>
+      <input type="text" name="q" value="{{ filters.q }}" class="form-control form-control-sm"
+             placeholder="Job # or title">
+    </div>
+    <div class="col-6 col-md-2">
+      <label class="form-label small">Status</label>
+      <select name="status" class="form-select form-select-sm">
+        <option value="">All</option>
+        {% for val, label in statuses %}
+        <option value="{{ val }}" {% if filters.status == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-6 col-md-2">
+      <label class="form-label small">Priority</label>
+      <select name="priority" class="form-select form-select-sm">
+        <option value="">All</option>
+        {% for val, label in priorities %}
+        <option value="{{ val }}" {% if filters.priority == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-6 col-md-2">
+      <label class="form-label small">Engineer</label>
+      <select name="engineer" class="form-select form-select-sm">
+        <option value="">All</option>
+        {% for eng in engineers %}
+        <option value="{{ eng.pk }}" {% if filters.engineer == eng.pk|stringformat:"s" %}selected{% endif %}>{{ eng.full_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-6 col-md-1">
+      <button type="submit" class="btn btn-primary btn-sm w-100">Filter</button>
+    </div>
+    <div class="col-6 col-md-1">
+      <a href="{% url 'job_list' %}" class="btn btn-outline-secondary btn-sm w-100">Clear</a>
+    </div>
+  </div>
+</form>
+
+<!-- ── Table ──────────────────────────────────────────────────────────────── -->
+<div class="card-panel p-0">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0 ftpops-table">
+      <thead>
+        <tr>
+          <th><a href="?sort={% if filters.sort == 'job_number' %}-job_number{% else %}job_number{% endif %}&q={{ filters.q }}&status={{ filters.status }}&priority={{ filters.priority }}">Job #</a></th>
+          <th><a href="?sort={% if filters.sort == 'title' %}-title{% else %}title{% endif %}&q={{ filters.q }}&status={{ filters.status }}">Title</a></th>
+          <th>Client</th>
+          <th>Site</th>
+          <th>Status</th>
+          <th>Priority</th>
+          <th>Engineers</th>
+          <th><a href="?sort={% if filters.sort == 'due_date' %}-due_date{% else %}due_date{% endif %}&q={{ filters.q }}&status={{ filters.status }}">Due Date</a></th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for job in jobs %}
+        <tr class="{% if job.is_overdue %}row-overdue{% endif %}">
+          <td><a href="{% url 'job_detail' job.pk %}" class="fw-semibold">{{ job.job_number }}</a></td>
+          <td>
+            {{ job.title }}
+            {% if job.is_overdue %}<span class="badge bg-danger ms-1">Overdue</span>{% endif %}
+          </td>
+          <td>{{ job.client.name }}</td>
+          <td>{{ job.site.site_name }}</td>
+          <td><span class="status-badge status-{{ job.status|slugify }}">{{ job.status }}</span></td>
+          <td><span class="badge priority-{{ job.priority|lower }}">{{ job.priority }}</span></td>
+          <td>
+            {% for eng in job.assigned_engineers.all %}
+              <span class="badge bg-secondary">{{ eng.full_name }}</span>
+            {% empty %}<span class="text-muted small">—</span>{% endfor %}
+          </td>
+          <td class="{% if job.is_overdue %}text-danger fw-semibold{% endif %}">
+            {{ job.due_date|default:"—" }}
+          </td>
+          <td>
+            <a href="{% url 'job_detail' job.pk %}" class="btn btn-xs btn-outline-primary"><i class="bi bi-eye"></i></a>
+            <a href="{% url 'job_edit' job.pk %}" class="btn btn-xs btn-outline-secondary"><i class="bi bi-pencil"></i></a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="9" class="text-center text-muted py-4">No jobs found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

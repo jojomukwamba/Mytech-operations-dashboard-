@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Login{% endblock %}
+{% block auth_content %}
+<div class="min-vh-100 d-flex align-items-center justify-content-center" style="background:var(--bg-dark);">
+  <div class="login-card">
+    <div class="text-center mb-4">
+      <div class="login-icon"><i class="bi bi-lightning-charge-fill"></i></div>
+      <h2 class="fw-bold text-white mt-3">FTP Ops</h2>
+      <p class="text-muted">Future Tech Professionals</p>
+    </div>
+    <form method="post">
+      {% csrf_token %}
+      {% if form.errors %}
+        <div class="alert alert-danger">Invalid username or password.</div>
+      {% endif %}
+      <div class="mb-3">
+        <label class="form-label text-light">Username</label>
+        <input type="text" name="username" class="form-control form-control-dark" autofocus>
+      </div>
+      <div class="mb-4">
+        <label class="form-label text-light">Password</label>
+        <input type="password" name="password" class="form-control form-control-dark">
+      </div>
+      <button type="submit" class="btn btn-primary w-100 btn-lg">
+        <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+{% block title %}{{ job.job_number }}{% endblock %}
+{% block page_title %}{{ job.job_number }} – {{ job.title }}{% endblock %}
+
+{% block topbar_actions %}
+<a href="{% url 'job_print' job.pk %}" target="_blank" class="btn btn-outline-primary btn-sm">
+  <i class="bi bi-printer me-1"></i> Print
+</a>
+<a href="{% url 'job_edit' job.pk %}" class="btn btn-outline-secondary btn-sm">
+  <i class="bi bi-pencil me-1"></i> Edit
+</a>
+<a href="{% url 'job_list' %}" class="btn btn-ghost btn-sm">
+  <i class="bi bi-arrow-left me-1"></i> Back
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <!-- ── Left: Job Info ──────────────────────────────────────────────────── -->
+  <div class="col-lg-8">
+    <!-- Header -->
+    <div class="card-panel mb-3">
+      <div class="d-flex flex-wrap gap-2 align-items-start justify-content-between">
+        <div>
+          <span class="status-badge status-{{ job.status|slugify }} me-2">{{ job.status }}</span>
+          <span class="badge priority-{{ job.priority|lower }}">{{ job.priority }}</span>
+          {% if job.is_overdue %}<span class="badge bg-danger ms-2"><i class="bi bi-clock-history me-1"></i>Overdue</span>{% endif %}
+        </div>
+        <small class="text-muted">Type: <strong>{{ job.job_type }}</strong></small>
+      </div>
+      <hr>
+      <div class="row g-3">
+        <div class="col-sm-6">
+          <label class="detail-label">Client Details</label>
+          <div><strong>Name:</strong> {{ job.client.name }}</div>
+          {% if job.client.phone_number %}<div><strong>Phone:</strong> {{ job.client.phone_number }}</div>{% endif %}
+          {% if job.client.email %}<div><strong>Email:</strong> <a href="mailto:{{ job.client.email }}">{{ job.client.email }}</a></div>{% endif %}
+        </div>
+        <div class="col-sm-6">
+          <label class="detail-label">Site Details</label>
+          <div>{{ job.site.site_name }}</div>
+          <div class="small text-muted">{{ job.site.address }}</div>
+        </div>
+        <div class="col-sm-6">
+          <label class="detail-label">Device S/N</label>
+          <div>{{ job.device_sn|default:"—" }}</div>
+        </div>
+        <div class="col-sm-6">
+          <label class="detail-label">Assigned Engineers</label>
+          <div>
+            {% for eng in job.assigned_engineers.all %}
+              <span class="badge bg-secondary me-1">{{ eng.full_name }}</span>
+            {% empty %}<span class="text-muted">None assigned</span>{% endfor %}
+          </div>
+        </div>
+        <div class="col-sm-6">
+          <label class="detail-label">Dates</label>
+          <div class="small">
+            Assigned: {{ job.date_assigned|date:"d M Y" }}<br>
+            Start: {{ job.work_start_date|default:"Not set" }}<br>
+            Due: <span class="{% if job.is_overdue %}text-danger fw-bold{% endif %}">{{ job.due_date|default:"Not set" }}</span><br>
+            {% if job.date_completed %}Completed: {{ job.date_completed|date:"d M Y" }}{% endif %}
+          </div>
+        </div>
+        {% if job.description %}
+        <div class="col-12 mt-3">
+          <label class="detail-label">Description / Notes</label>
+          <div class="description-box">{{ job.description|linebreaks }}</div>
+        </div>
+        {% endif %}
+        
+        <div class="col-sm-6 mt-3">
+          <label class="detail-label">Risk Assessment</label>
+          <ul class="list-unstyled mb-0 small">
+            <li><i class="bi {% if job.risk_height %}bi-check-square-fill text-primary{% else %}bi-square text-muted{% endif %} me-2"></i>Working at height</li>
+            <li><i class="bi {% if job.risk_confined_space %}bi-check-square-fill text-primary{% else %}bi-square text-muted{% endif %} me-2"></i>Working in Confined space</li>
+            <li><i class="bi {% if job.risk_dust_noise %}bi-check-square-fill text-primary{% else %}bi-square text-muted{% endif %} me-2"></i>Dust from drilling & noise</li>
+          </ul>
+        </div>
+        <div class="col-sm-6 mt-3">
+          <label class="detail-label">Safety Precautions</label>
+          <ul class="list-unstyled mb-0 small">
+            <li><i class="bi {% if job.safety_ladder %}bi-check-square-fill text-primary{% else %}bi-square text-muted{% endif %} me-2"></i>Using a step ladder</li>
+            <li><i class="bi {% if job.safety_ppe %}bi-check-square-fill text-primary{% else %}bi-square text-muted{% endif %} me-2"></i>Wearing full PPE</li>
+            <li><i class="bi {% if job.safety_mask %}bi-check-square-fill text-primary{% else %}bi-square text-muted{% endif %} me-2"></i>Ear plugs and dust mask</li>
+            <li><i class="bi {% if job.safety_harness %}bi-check-square-fill text-primary{% else %}bi-square text-muted{% endif %} me-2"></i>Safety harness</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Status Change -->
+    <div class="card-panel mb-3">
+      <h6 class="panel-title"><i class="bi bi-arrow-left-right me-2"></i>Change Status</h6>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="status">
+        <div class="row g-2 align-items-end">
+          <div class="col-sm-5">{{ status_form.new_status }}</div>
+          <div class="col-sm-5">{{ status_form.comment }}</div>
+          <div class="col-sm-2">
+            <button class="btn btn-primary w-100">Update</button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Time Logs -->
+    <div class="card-panel mb-3">
+      <h6 class="panel-title"><i class="bi bi-clock-history me-2"></i>Time Log & Team Tracking</h6>
+      <div class="table-responsive mb-3">
+        <table class="table table-sm ftpops-table">
+          <thead>
+            <tr>
+              <th>Technician Name</th>
+              <th>Start Time</th>
+              <th>End Time</th>
+              <th>Hours</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for log in time_logs %}
+            <tr>
+              <td>{{ log.engineer.full_name }}</td>
+              <td>{{ log.start_time|date:"d M H:i" }}</td>
+              <td>{{ log.end_time|date:"d M H:i" }}</td>
+              <td>{{ log.hours_worked }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-center text-muted small">No time logs recorded.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <form method="post" class="mt-2">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="time_log">
+        <div class="row g-2 align-items-end">
+          <div class="col-md-3">
+            <label class="form-label small text-muted mb-1">Technician</label>
+            {{ time_log_form.engineer }}
+          </div>
+          <div class="col-md-3">
+            <label class="form-label small text-muted mb-1">Start Time</label>
+            {{ time_log_form.start_time }}
+          </div>
+          <div class="col-md-3">
+            <label class="form-label small text-muted mb-1">End Time</label>
+            {{ time_log_form.end_time }}
+          </div>
+          <div class="col-md-3">
+            <button class="btn btn-outline-primary w-100"><i class="bi bi-plus me-1"></i>Add Log</button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Comments -->
+    <div class="card-panel mb-3">
+      <h6 class="panel-title"><i class="bi bi-chat-dots me-2"></i>Comments</h6>
+      {% for comment in comments %}
+      <div class="comment-item">
+        <div class="comment-header">
+          <strong>{{ comment.author.get_full_name|default:comment.author.username }}</strong>
+          <span class="text-muted small ms-2">{{ comment.timestamp|date:"d M Y, H:i" }}</span>
+        </div>
+        <div class="comment-text">{{ comment.text|linebreaks }}</div>
+      </div>
+      {% empty %}
+      <p class="text-muted small">No comments yet.</p>
+      {% endfor %}
+
+      <form method="post" class="mt-3">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="comment">
+        {{ comment_form.text }}
+        <button class="btn btn-outline-primary btn-sm mt-2">
+          <i class="bi bi-send me-1"></i>Post Comment
+        </button>
+      </form>
+    </div>
+
+    <!-- Attachments -->
+    <div class="card-panel">
+      <h6 class="panel-title"><i class="bi bi-paperclip me-2"></i>Attachments</h6>
+      <div class="row g-2 mb-3">
+        {% for att in attachments %}
+        <div class="col-auto">
+          <a href="{{ att.file.url }}" target="_blank" class="attachment-chip">
+            {% if att.is_image %}
+              <i class="bi bi-image me-1"></i>
+            {% else %}
+              <i class="bi bi-file-earmark-pdf me-1"></i>
+            {% endif %}
+            {{ att.filename }}
+          </a>
+        </div>
+        {% empty %}
+        <div class="col-12"><p class="text-muted small">No attachments.</p></div>
+        {% endfor %}
+      </div>
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="attach">
+        <div class="d-flex gap-2 align-items-center">
+          {{ attachment_form.file }}
+          <button class="btn btn-outline-secondary btn-sm">Upload</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── Right: Status History ──────────────────────────────────────────── -->
+  <div class="col-lg-4">
+    <div class="card-panel">
+      <h6 class="panel-title"><i class="bi bi-clock-history me-2"></i>Status History</h6>
+      <div class="timeline">
+        {% for h in history %}
+        <div class="timeline-item">
+          <div class="timeline-dot status-{{ h.new_status|slugify }}-dot"></div>
+          <div class="timeline-body">
+            <div class="small fw-semibold">
+              <span class="text-muted">{{ h.old_status }}</span>
+              <i class="bi bi-arrow-right mx-1"></i>
+              <span>{{ h.new_status }}</span>
+            </div>
+            <div class="text-muted" style="font-size:.75rem;">
+              {{ h.timestamp|date:"d M Y, H:i" }}
+              {% if h.changed_by %}by {{ h.changed_by.username }}{% endif %}
+            </div>
+            {% if h.comment %}<div class="small fst-italic mt-1">{{ h.comment }}</div>{% endif %}
+          </div>
+        </div>
+        {% empty %}
+        <p class="text-muted small">No history yet.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% load job_tags %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block topbar_actions %}
+<a href="{% url 'job_create' %}" class="btn btn-primary btn-sm">
+  <i class="bi bi-plus-lg me-1"></i> New Job
+</a>
+{% endblock %}
+
+{% block content %}
+<!-- ── Summary Cards ─────────────────────────────────────────────────────── -->
+<div class="row g-3 mb-4">
+  <div class="col-12 col-sm-6 col-xl-3">
+    <div class="stat-card stat-card--blue">
+      <div class="stat-icon"><i class="bi bi-briefcase"></i></div>
+      <div class="stat-value">{{ counts.total_open }}</div>
+      <div class="stat-label">Open Jobs</div>
+    </div>
+  </div>
+  <div class="col-12 col-sm-6 col-xl-3">
+    <div class="stat-card stat-card--red">
+      <div class="stat-icon"><i class="bi bi-exclamation-triangle"></i></div>
+      <div class="stat-value">{{ counts.overdue }}</div>
+      <div class="stat-label">Overdue</div>
+    </div>
+  </div>
+  <div class="col-12 col-sm-6 col-xl-3">
+    <div class="stat-card stat-card--green">
+      <div class="stat-icon"><i class="bi bi-check-circle"></i></div>
+      <div class="stat-value">{{ counts.by_status|get_item:"Completed" }}</div>
+      <div class="stat-label">Completed</div>
+    </div>
+  </div>
+  <div class="col-12 col-sm-6 col-xl-3">
+    <div class="stat-card stat-card--orange">
+      <div class="stat-icon"><i class="bi bi-arrow-repeat"></i></div>
+      <div class="stat-value">{{ counts.by_status|get_item:"In Progress" }}</div>
+      <div class="stat-label">In Progress</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Status + Priority Bars ────────────────────────────────────────────── -->
+<div class="row g-3 mb-4">
+  <div class="col-md-6">
+    <div class="card-panel">
+      <h6 class="panel-title">Jobs by Status</h6>
+      {% for val, label in statuses %}
+      <div class="mb-2">
+        <div class="d-flex justify-content-between small text-muted mb-1">
+          <span>{{ label }}</span>
+          <span>{{ counts.by_status|get_item:val }}</span>
+        </div>
+        <div class="progress" style="height:6px;">
+          <div class="progress-bar bg-primary"
+               style="width:{{ counts.by_status|get_item:val|pct_of:counts.total_open }}%"></div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card-panel">
+      <h6 class="panel-title">Jobs by Priority</h6>
+      {% for val, label in priority_choices %}
+      <div class="mb-2">
+        <div class="d-flex justify-content-between small text-muted mb-1">
+          <span><span class="badge priority-{{ val|lower }}">{{ label }}</span></span>
+          <span>{{ counts.by_priority|get_item:val }}</span>
+        </div>
+        <div class="progress" style="height:6px;">
+          <div class="progress-bar bg-warning"
+               style="width:{{ counts.by_priority|get_item:val|pct_of:counts.total_open }}%"></div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- ── Kanban Board ──────────────────────────────────────────────────────── -->
+<div class="card-panel">
+  <h6 class="panel-title mb-3">
+    <i class="bi bi-kanban me-2"></i>Kanban Board
+    <small class="text-muted fw-normal ms-2">Drag cards to change status</small>
+  </h6>
+  <div class="kanban-board" id="kanbanBoard">
+    {% for status_label, jobs in columns.items %}
+    <div class="kanban-column">
+      <div class="kanban-column-header status-{{ status_label|slugify }}">
+        <span>{{ status_label }}</span>
+        <span class="badge bg-secondary ms-2">{{ jobs|length }}</span>
+      </div>
+      <div class="kanban-drop-zone"
+           data-status="{{ status_label }}"
+           ondragover="event.preventDefault()"
+           ondrop="onDrop(event)">
+        {% for job in jobs %}
+        <div class="kanban-card {% if job.is_overdue %}kanban-card--overdue{% endif %}"
+             draggable="true"
+             data-job-id="{{ job.pk }}"
+             ondragstart="onDragStart(event)">
+          <div class="kanban-job-number">{{ job.job_number }}</div>
+          <div class="kanban-job-title">
+            <a href="{% url 'job_detail' job.pk %}">{{ job.title }}</a>
+          </div>
+          <div class="kanban-meta">
+            <span class="badge priority-{{ job.priority|lower }}">{{ job.priority }}</span>
+            <span class="text-muted small ms-1">{{ job.client.name }}</span>
+          </div>
+          {% if job.is_overdue %}
+          <div class="overdue-badge"><i class="bi bi-clock-history"></i> Overdue</div>
+          {% endif %}
+        </div>
+        {% empty %}
+        <div class="kanban-empty">No jobs</div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const CSRF = "{{ csrf_token }}";
+function onDragStart(e) {
+  e.dataTransfer.setData('jobId', e.currentTarget.dataset.jobId);
+}
+function onDrop(e) {
+  e.preventDefault();
+  const jobId = e.dataTransfer.getData('jobId');
+  const newStatus = e.currentTarget.dataset.status;
+  fetch(`/api/jobs/${jobId}/status/`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json', 'X-CSRFToken': CSRF},
+    body: JSON.stringify({status: newStatus}),
+  }).then(r => r.json()).then(d => { if (d.ok) location.reload(); });
+}
+</script>
+{% endblock %}

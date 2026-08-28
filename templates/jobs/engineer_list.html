@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Engineers{% endblock %}
+{% block page_title %}Engineers{% endblock %}
+
+{% block topbar_actions %}
+<a href="{% url 'engineer_create' %}" class="btn btn-primary btn-sm">
+  <i class="bi bi-plus-lg me-1"></i> Add Engineer
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="card-panel">
+  <div class="table-responsive">
+    <table class="table table-sm ftpops-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Phone</th>
+          <th>Email</th>
+          <th>Specialisation</th>
+          <th>Jobs</th>
+          <th>Status</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for eng in engineers %}
+        <tr>
+          <td><strong>{{ eng.full_name }}</strong></td>
+          <td>{{ eng.phone_number|default:"—" }}</td>
+          <td>{% if eng.email %}<a href="mailto:{{ eng.email }}">{{ eng.email }}</a>{% else %}—{% endif %}</td>
+          <td>{{ eng.specialisation|default:"—" }}</td>
+          <td><span class="badge bg-primary">{{ eng.job_count }}</span></td>
+          <td>
+            {% if eng.active_status %}
+              <span class="badge bg-success">Active</span>
+            {% else %}
+              <span class="badge bg-secondary">Inactive</span>
+            {% endif %}
+          </td>
+          <td class="text-end">
+            <a href="{% url 'engineer_edit' eng.pk %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>
+            <a href="{% url 'engineer_delete' eng.pk %}" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="text-center text-muted py-4">No engineers yet. Click "Add Engineer" to get started.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

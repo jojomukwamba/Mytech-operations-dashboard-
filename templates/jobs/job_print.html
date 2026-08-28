@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Job Card - {{ job.job_number }}</title>
+  <style>
+    body { font-family: Arial, sans-serif; font-size: 12px; margin: 0; padding: 20px; color: #000; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    th, td { border: 1px solid #000; padding: 8px; vertical-align: top; }
+    th { text-align: left; background-color: #f0f0f0; }
+    h1, h2, h3, h4 { margin: 0 0 10px 0; }
+    .header-table { margin-bottom: 30px; }
+    .header-table td { width: 33.33%; text-align: center; vertical-align: middle; }
+    .header-table img { max-width: 150px; }
+    .checkbox-list { list-style: none; padding: 0; margin: 0; }
+    .checkbox-list li { margin-bottom: 5px; }
+    .box { display: inline-block; width: 12px; height: 12px; border: 1px solid #000; margin-right: 5px; vertical-align: middle; text-align: center; line-height: 12px; font-weight: bold;}
+    .box.checked::after { content: 'X'; }
+    @media print {
+      body { padding: 0; }
+      @page { margin: 1cm; }
+    }
+  </style>
+</head>
+<body onload="window.print()">
+
+<table class="header-table">
+  <tr>
+    <td style="text-align: left; font-size: 11px;">
+      Revision: One<br>
+      Created by: Manager ICT<br>
+      Authorized by: Managing Director<br>
+      Date of Issue: 1 September 2025<br>
+      Effective date: 24 September 2025
+    </td>
+    <td>
+      <h2 style="margin:0;">Job Card</h2>
+    </td>
+    <td style="text-align: right; font-size: 11px;">
+      <!-- Placeholder for logo -->
+      <strong>MTS SOLUTIONS</strong><br>
+      Ref: MTSS/TD/FRM/001/00-25
+    </td>
+  </tr>
+</table>
+
+<div style="margin-bottom: 20px;">
+  <strong>Site location:</strong> <span style="text-decoration: underline;">{{ job.site.site_name }} - {{ job.site.address }}</span>
+</div>
+
+<table>
+  <tr>
+    <td style="width: 50%;">
+      <strong>Job Card Number:</strong> {{ job.job_number }}<br><br>
+      <strong>Work start date:</strong> {{ job.work_start_date|default:"___/___/_________" }}<br><br>
+      <strong>Device S/N:</strong> {{ job.device_sn|default:"_________________________" }}
+    </td>
+    <td style="width: 50%;">
+      <strong>Client Details:</strong>
+      <ul style="margin-top: 5px;">
+        <li><strong>Name:</strong> {{ job.client.name }}</li>
+        <li><strong>Phone number:</strong> {{ job.client.phone_number|default:"____________________" }}</li>
+        <li><strong>Client email:</strong> {{ job.client.email|default:"____________________" }}</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <strong>Job Assigned to:</strong>
+      <ul style="margin-top: 5px; list-style: none; padding-left: 10px;">
+        <li><strong>Technicians name:</strong><br>
+          {% for eng in job.assigned_engineers.all %}
+            {{ eng.full_name }}{% if not forloop.last %}, {% endif %}
+          {% empty %}_______________________________________{% endfor %}
+        </li>
+        <li style="margin-top: 10px;"><strong>Phone number:</strong> 
+          {% for eng in job.assigned_engineers.all %}
+            {{ eng.phone }}{% if not forloop.last %}, {% endif %}
+          {% empty %}_______________________________________{% endfor %}
+        </li>
+        <li style="margin-top: 10px;"><strong>Email address:</strong> 
+          {% for eng in job.assigned_engineers.all %}
+            {{ eng.email }}{% if not forloop.last %}, {% endif %}
+          {% empty %}_______________________________________{% endfor %}
+        </li>
+      </ul>
+    </td>
+    <td>
+      <strong>Job Description:</strong>
+      <div style="margin-top: 5px;">
+        <span class="box {% if job.job_type == 'Starlink' %}checked{% endif %}"></span> Starlink installation/troubleshooting<br>
+        <span class="box {% if job.job_type == 'CCTV' %}checked{% endif %}"></span> CCTV installation<br>
+        <span class="box {% if job.job_type == 'Networking' %}checked{% endif %}"></span> LAN/Access Control<br>
+        <br>
+        <strong>Other/ Notes on works done:</strong><br>
+        <div style="margin-top: 5px; border-bottom: 1px dotted #000; min-height: 1.5em;">{{ job.description|linebreaksbr }}</div>
+      </div>
+    </td>
+  </tr>
+</table>
+
+<h4 style="margin-bottom: 5px;">Risk assessment:</h4>
+<table>
+  <tr>
+    <td style="width: 50%;">
+      <h3 style="color: #666; font-weight: normal; margin-top: 0;">Risks and hazards</h3>
+      <ul class="checkbox-list">
+        <li><span class="box {% if job.risk_height %}checked{% endif %}"></span> Working at height</li>
+        <li><span class="box {% if job.risk_confined_space %}checked{% endif %}"></span> Working in Confined space</li>
+        <li><span class="box {% if job.risk_dust_noise %}checked{% endif %}"></span> Dust from drilling & noise</li>
+      </ul>
+    </td>
+    <td style="width: 50%;">
+      <h3 style="color: #666; font-weight: normal; margin-top: 0;">Safety precautions</h3>
+      <ul class="checkbox-list">
+        <li><span class="box {% if job.safety_ladder %}checked{% endif %}"></span> Using a step ladder</li>
+        <li><span class="box {% if job.safety_ppe %}checked{% endif %}"></span> Wearing full PPE</li>
+        <li><span class="box {% if job.safety_mask %}checked{% endif %}"></span> Using ear plugs and dust mask</li>
+        <li><span class="box {% if job.safety_harness %}checked{% endif %}"></span> Safety harness</li>
+      </ul>
+    </td>
+  </tr>
+</table>
+
+<h4 style="margin-bottom: 5px;">Time log and Team Tracking;</h4>
+<table>
+  <tr>
+    <th>Technician Name</th>
+    <th>Start time</th>
+    <th>End time</th>
+    <th>HOURS WORKED</th>
+    <th>SIGNATURE</th>
+  </tr>
+  {% for log in time_logs %}
+  <tr>
+    <td>{{ log.engineer.full_name }}</td>
+    <td>{{ log.start_time|date:"d M Y, H:i" }}</td>
+    <td>{{ log.end_time|date:"d M Y, H:i" }}</td>
+    <td>{{ log.hours_worked }}</td>
+    <td></td>
+  </tr>
+  {% endfor %}
+  {% if time_logs.count < 3 %}
+    {% for i in "123"|make_list %}
+      {% if forloop.counter > time_logs.count %}
+      <tr>
+        <td style="height: 25px;"></td><td></td><td></td><td></td><td></td>
+      </tr>
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+</table>
+
+<h4 style="margin-bottom: 5px;">JOB SIGN OFF</h4>
+<table>
+  <tr>
+    <td style="width: 33.33%;">
+      <strong>Site Supervisor's Signature</strong><br><br><br><br>
+      Sign: __________________________<br><br>
+      Date: ______/______/___________
+    </td>
+    <td style="width: 33.33%;">
+      <strong>Clients Signature</strong> <br>(To be signed upon completion)<br><br><br>
+      Sign: __________________________<br><br>
+      Date: ______/______/___________
+    </td>
+    <td style="width: 33.33%;">
+      <strong>Managers Signature</strong> <br>(To be signed after the works have been completed)<br><br>
+      Sign: __________________________<br><br>
+      Date: ______/______/___________
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>
